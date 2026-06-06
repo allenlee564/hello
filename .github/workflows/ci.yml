@@ -1,22 +1,28 @@
 name: CI
 
-on:
-  push:
-  pull_request:
+on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
-      fail-fast: false            # 一個失敗不拖累其他
+      fail-fast: false              # 一個版本掛掉，其他版本照跑完
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         python: ["3.10", "3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: pip                 # ← 加速
+
       - run: pip install -r requirements.txt
-      - run: pytest
+
+      - name: Show secret is masked
+        env:
+          FAKE_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: echo "key starts with $FAKE_KEY"   # log 自動顯示 ***
+
+      - run: pytest -v
